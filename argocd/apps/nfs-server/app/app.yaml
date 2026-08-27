@@ -1,0 +1,43 @@
+# Tier 1 public raw-workload Application for the kernel NFS server.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nfs-server
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  labels:
+    deploymentStrategy: helm-direct
+spec:
+  project: infrastructure
+  sources:
+    # The bedag raw chart is a null renderer. Real resources come from source[1].
+    - repoURL: https://bedag.github.io/helm-charts
+      chart: raw
+      targetRevision: "0.0.0"
+      helm:
+        releaseName: nfs-server
+        values: |
+          resources: []
+    # The private environment overlay replaces this placeholder repository and path.
+    - repoURL: PLACEHOLDER
+      targetRevision: main
+      path: argocd/apps/nfs-server/environments/PLACEHOLDER/manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nfs-server
+  syncPolicy:
+    managedNamespaceMetadata:
+      labels:
+        pod-security.kubernetes.io/enforce: privileged
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
