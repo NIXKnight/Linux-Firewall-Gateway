@@ -3,11 +3,17 @@ set -eu
 
 STATE_DIR=/var/lib/nfs
 THREADS_FILE=/proc/fs/nfsd/threads
+IDMAPD_PID=
 NFSDCLD_PID=
 
 stop_server() {
     exportfs -uav >/dev/null 2>&1 || :
     rpc.nfsd 0 >/dev/null 2>&1 || :
+    if [ -n "${IDMAPD_PID}" ]; then
+        kill "${IDMAPD_PID}" >/dev/null 2>&1 || :
+        wait "${IDMAPD_PID}" >/dev/null 2>&1 || :
+        IDMAPD_PID=
+    fi
     if [ -n "${NFSDCLD_PID}" ]; then
         kill "${NFSDCLD_PID}" >/dev/null 2>&1 || :
         wait "${NFSDCLD_PID}" >/dev/null 2>&1 || :
@@ -25,6 +31,7 @@ on_signal() {
 if [ "${1:-}" = "--health" ]; then
     test -r "${THREADS_FILE}"
     test "$(cat "${THREADS_FILE}")" -gt 0
+    pgrep -x rpc.idmapd >/dev/null
     pgrep -x nfsdcld >/dev/null
     test -r "${STATE_DIR}/nfsdcld/main.sqlite"
     exportfs -s >/dev/null
@@ -32,10 +39,12 @@ if [ "${1:-}" = "--health" ]; then
 fi
 
 test -x /usr/sbin/rpc.nfsd
+test -x /usr/sbin/rpc.idmapd
 test -x /usr/sbin/nfsdcld
 test -x /usr/sbin/exportfs
 test -r /etc/nfs.conf
 test -r /etc/exports
+test -r /etc/idmapd.conf
 test -d /proc/fs/nfsd
 
 mkdir -p \
@@ -49,6 +58,11 @@ mountpoint -q "${STATE_DIR}/rpc_pipefs" || mount -t rpc_pipefs rpc_pipefs "${STA
 
 trap on_signal INT TERM
 trap stop_server 0
+
+rpc.idmapd -S -f -p "${STATE_DIR}/rpc_pipefs" &
+IDMAPD_PID=$!
+sleep 1
+kill -0 "${IDMAPD_PID}" >/dev/null 2>&1
 
 nfsdcld -F \
     -p "${STATE_DIR}/rpc_pipefs" \
@@ -65,6 +79,7 @@ test "$(cat "${THREADS_FILE}")" -gt 0
 
 while :; do
     test "$(cat "${THREADS_FILE}")" -gt 0
+    kill -0 "${IDMAPD_PID}" >/dev/null 2>&1
     kill -0 "${NFSDCLD_PID}" >/dev/null 2>&1
     sleep 10
 done

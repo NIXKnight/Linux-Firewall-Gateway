@@ -24,11 +24,13 @@ RUN set -eux; \
     : > /etc/exports; \
     test -x /usr/sbin/rpc.nfsd; \
     test -x /usr/sbin/nfsdcld; \
+    test -x /usr/sbin/rpc.idmapd; \
     test -x /usr/sbin/exportfs; \
     test -x /usr/bin/mountpoint; \
     rm -rf /var/lib/apt/lists/*
 
 COPY nfs.conf /etc/nfs.conf
+COPY idmapd.conf /etc/idmapd.conf
 COPY entrypoint.sh /usr/local/sbin/nfs-kernel-entrypoint
 
 RUN chmod 0755 /usr/local/sbin/nfs-kernel-entrypoint
