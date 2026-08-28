@@ -23,6 +23,7 @@ RUN set -eux; \
     fi; \
     : > /etc/exports; \
     test -x /usr/sbin/rpc.nfsd; \
+    test -x /usr/sbin/nfsdcld; \
     test -x /usr/sbin/exportfs; \
     test -x /usr/bin/mountpoint; \
     rm -rf /var/lib/apt/lists/*
