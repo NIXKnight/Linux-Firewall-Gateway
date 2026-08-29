@@ -67,7 +67,7 @@ mountpoint -q "${STATE_DIR}/rpc_pipefs" || mount -t rpc_pipefs rpc_pipefs "${STA
 trap on_signal INT TERM
 trap stop_server 0
 
-rpc.mountd -F -L -N 2 -N 3 -u -s "${STATE_DIR}" &
+rpc.mountd -F --no-netlink -N 2 -N 3 -u -s "${STATE_DIR}" &
 MOUNTD_PID=$!
 sleep 1
 kill -0 "${MOUNTD_PID}" >/dev/null 2>&1
