@@ -67,11 +67,6 @@ mountpoint -q "${STATE_DIR}/rpc_pipefs" || mount -t rpc_pipefs rpc_pipefs "${STA
 trap on_signal INT TERM
 trap stop_server 0
 
-rpc.mountd -F --no-netlink -N 2 -N 3 -u -s "${STATE_DIR}" &
-MOUNTD_PID=$!
-sleep 1
-kill -0 "${MOUNTD_PID}" >/dev/null 2>&1
-
 rpc.idmapd -S -f -p "${STATE_DIR}/rpc_pipefs" &
 IDMAPD_PID=$!
 sleep 1
@@ -86,6 +81,11 @@ kill -0 "${NFSDCLD_PID}" >/dev/null 2>&1
 
 rpc.nfsd 8
 exportfs -rav
+
+rpc.mountd -F --no-netlink -N 2 -N 3 -u -s "${STATE_DIR}" &
+MOUNTD_PID=$!
+sleep 1
+kill -0 "${MOUNTD_PID}" >/dev/null 2>&1
 
 test -r "${THREADS_FILE}"
 test "$(cat "${THREADS_FILE}")" -gt 0

@@ -36,6 +36,9 @@ jobs:
           grep -Fq -- '-N 2' docker/nfs-kernel/entrypoint.sh
           grep -Fq -- '-N 3' docker/nfs-kernel/entrypoint.sh
           grep -Fq -- '-u' docker/nfs-kernel/entrypoint.sh
+          mountd_line="$(grep -n 'rpc.mountd -F --no-netlink' docker/nfs-kernel/entrypoint.sh | cut -d: -f1)"
+          exportfs_line="$(grep -n 'exportfs -rav' docker/nfs-kernel/entrypoint.sh | cut -d: -f1)"
+          test "${mountd_line}" -gt "${exportfs_line}"
           grep -Fq 'test "$(cat "${THREADS_FILE}")" -gt 0' docker/nfs-kernel/entrypoint.sh
           grep -Fq 'pgrep -x rpc.mountd' docker/nfs-kernel/entrypoint.sh
           grep -Fq 'pgrep -x nfsdcld' docker/nfs-kernel/entrypoint.sh
