@@ -59,8 +59,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ secrets.DOCKER_HUB_USERNAME }}/nfs-kernel:2.8.3-${{ github.sha }}
-            ${{ secrets.DOCKER_HUB_USERNAME }}/nfs-kernel:2.8.3
+            ${{ secrets.DOCKER_HUB_USERNAME }}/nfs-kernel:2.9.2-${{ github.sha }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/nfs-kernel:2.9.2
             ${{ secrets.DOCKER_HUB_USERNAME }}/nfs-kernel:latest
           provenance: true
           sbom: true

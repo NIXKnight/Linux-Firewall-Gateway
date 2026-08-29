@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1.7
 
-FROM --platform=linux/amd64 debian:trixie-slim@sha256:abc9cb88a5587630d7f915f47b23b0668fe250fbfc6457aa4d52b534c1bbf73f
+FROM --platform=linux/amd64 debian:sid-slim@sha256:17d1843dae9ca66f1617c1e464f40d06059ccefb0c606e8b54687f253af1684e
 
-ARG NFS_UTILS_VERSION="1:2.8.3-1"
+ARG NFS_UTILS_VERSION="1:2.9.2-1"
 
 ENV DEBIAN_FRONTEND=noninteractive
 

@@ -4,8 +4,8 @@ This image supplies the userland control tools for the Talos kernel NFS server. 
 
 ## Contract
 
-- Base image: Debian trixie-slim, pinned to the amd64 OCI manifest digest in the Dockerfile.
-- NFS-utils: Debian trixie `1:2.8.3-1`, installed with init-script startup blocked during the build.
+- Base image: Debian sid-slim, pinned to the amd64 OCI manifest digest in the Dockerfile.
+- NFS-utils: Debian sid `1:2.9.2-1`, installed with init-script startup blocked during the build; this version supplies mountd's `-L` / `--no-netlink` compatibility switch.
 - Runtime: privileged container with `hostNetwork: true` and access to `/proc/fs/nfsd`.
 - Server processes: `rpc.mountd`, `rpc.idmapd`, `nfsdcld`, `rpc.nfsd`, and `exportfs` only. Mountd is a server-only kernel authorization helper; the entrypoint does not launch `rpcbind` or `rpc.statd`.
 - Protocol: NFSv4.1 and NFSv4.2 over TCP port 2049. NFSv2, NFSv3, NFSv4.0, UDP, and NFSv2/v3 MOUNT protocol operations are disabled.
@@ -24,7 +24,7 @@ The health probe is read-only: it requires a positive NFSD thread count, live `r
 ```sh
 shellcheck entrypoint.sh
 docker build --platform linux/amd64 -t nixknight/nfs-kernel:local .
-docker run --rm --entrypoint /bin/sh nixknight/nfs-kernel:local -c 'command -v rpc.mountd && command -v rpc.idmapd && command -v nfsdcld && command -v rpc.nfsd && command -v exportfs && grep -Fxq "Domain = h.nixknight.pk" /etc/idmapd.conf && grep -Fxq "Nobody-Group = nogroup" /etc/idmapd.conf && ! pgrep -x rpcbind && ! pgrep -x rpc.statd'
+docker run --rm --entrypoint /bin/sh nixknight/nfs-kernel:local -c 'command -v rpc.mountd && rpc.mountd --help 2>&1 | grep -F -- "--no-netlink" && command -v rpc.idmapd && command -v nfsdcld && command -v rpc.nfsd && command -v exportfs && grep -Fxq "Domain = h.nixknight.pk" /etc/idmapd.conf && grep -Fxq "Nobody-Group = nogroup" /etc/idmapd.conf && ! pgrep -x rpcbind && ! pgrep -x rpc.statd'
 ```
 
 A live runtime test must run only after the matching Talos extension is installed and the Operator authorizes a privileged test. The test must verify listeners, exports, ownership squashing, locking, restart recovery, and absence of UDP/RPC auxiliary listeners.
