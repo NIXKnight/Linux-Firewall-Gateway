@@ -31,7 +31,8 @@ jobs:
           grep -Fq 'vers4.2 = yes' docker/nfs-kernel/nfs.conf
           grep -Fq 'tcp = yes' docker/nfs-kernel/nfs.conf
           grep -Fq 'udp = no' docker/nfs-kernel/nfs.conf
-          grep -Fq 'rpc.mountd -F' docker/nfs-kernel/entrypoint.sh
+          grep -Fq 'rpc.mountd -F -L' docker/nfs-kernel/entrypoint.sh
+          grep -Fq -- '-L' docker/nfs-kernel/entrypoint.sh
           grep -Fq -- '-N 2' docker/nfs-kernel/entrypoint.sh
           grep -Fq -- '-N 3' docker/nfs-kernel/entrypoint.sh
           grep -Fq -- '-u' docker/nfs-kernel/entrypoint.sh
