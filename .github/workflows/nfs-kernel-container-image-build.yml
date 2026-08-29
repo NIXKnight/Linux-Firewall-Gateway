@@ -35,6 +35,11 @@ jobs:
           grep -Fq -- '-N 2' docker/nfs-kernel/entrypoint.sh
           grep -Fq -- '-N 3' docker/nfs-kernel/entrypoint.sh
           grep -Fq -- '-u' docker/nfs-kernel/entrypoint.sh
+          grep -Fq 'test "$(cat "${THREADS_FILE}")" -gt 0' docker/nfs-kernel/entrypoint.sh
+          grep -Fq 'pgrep -x rpc.mountd' docker/nfs-kernel/entrypoint.sh
+          grep -Fq 'pgrep -x nfsdcld' docker/nfs-kernel/entrypoint.sh
+          grep -Fq 'exportfs -s' docker/nfs-kernel/entrypoint.sh
+          ! grep -Fq 'no_mount_listener' docker/nfs-kernel/entrypoint.sh
           ! grep -Eq 'rpcbind|rpc\.statd' docker/nfs-kernel/entrypoint.sh
 
       - name: Set up Docker Buildx

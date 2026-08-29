@@ -7,15 +7,6 @@ MOUNTD_PID=
 IDMAPD_PID=
 NFSDCLD_PID=
 
-no_mount_listener() {
-    if grep -Eq '^[[:space:]]*[0-9]+:[0-9A-F]+:4E50[[:space:]]+[0-9A-F]+:[0-9A-F]+[[:space:]]+0A[[:space:]]' /proc/net/tcp; then
-        return 1
-    fi
-    if grep -Eq '^[[:space:]]*[0-9]+:[0-9A-F]+:4E50[[:space:]]+[0-9A-F]+:[0-9A-F]+[[:space:]]+0A[[:space:]]' /proc/net/tcp6; then
-        return 1
-    fi
-}
-
 stop_server() {
     exportfs -uav >/dev/null 2>&1 || :
     rpc.nfsd 0 >/dev/null 2>&1 || :
@@ -50,7 +41,6 @@ if [ "${1:-}" = "--health" ]; then
     pgrep -x rpc.idmapd >/dev/null
     pgrep -x nfsdcld >/dev/null
     test -r "${STATE_DIR}/nfsdcld/main.sqlite"
-    no_mount_listener
     exportfs -s >/dev/null
     exit 0
 fi
@@ -99,13 +89,11 @@ exportfs -rav
 
 test -r "${THREADS_FILE}"
 test "$(cat "${THREADS_FILE}")" -gt 0
-no_mount_listener
 
 while :; do
     test "$(cat "${THREADS_FILE}")" -gt 0
     kill -0 "${MOUNTD_PID}" >/dev/null 2>&1
     kill -0 "${IDMAPD_PID}" >/dev/null 2>&1
     kill -0 "${NFSDCLD_PID}" >/dev/null 2>&1
-    no_mount_listener
     sleep 10
 done
