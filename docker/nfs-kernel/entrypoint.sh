@@ -3,12 +3,27 @@ set -eu
 
 STATE_DIR=/var/lib/nfs
 THREADS_FILE=/proc/fs/nfsd/threads
+MOUNTD_PID=
 IDMAPD_PID=
 NFSDCLD_PID=
+
+no_mount_listener() {
+    if grep -Eq '^[[:space:]]*[0-9]+:[0-9A-F]+:4E50[[:space:]]+[0-9A-F]+:[0-9A-F]+[[:space:]]+0A[[:space:]]' /proc/net/tcp; then
+        return 1
+    fi
+    if grep -Eq '^[[:space:]]*[0-9]+:[0-9A-F]+:4E50[[:space:]]+[0-9A-F]+:[0-9A-F]+[[:space:]]+0A[[:space:]]' /proc/net/tcp6; then
+        return 1
+    fi
+}
 
 stop_server() {
     exportfs -uav >/dev/null 2>&1 || :
     rpc.nfsd 0 >/dev/null 2>&1 || :
+    if [ -n "${MOUNTD_PID}" ]; then
+        kill "${MOUNTD_PID}" >/dev/null 2>&1 || :
+        wait "${MOUNTD_PID}" >/dev/null 2>&1 || :
+        MOUNTD_PID=
+    fi
     if [ -n "${IDMAPD_PID}" ]; then
         kill "${IDMAPD_PID}" >/dev/null 2>&1 || :
         wait "${IDMAPD_PID}" >/dev/null 2>&1 || :
@@ -31,13 +46,16 @@ on_signal() {
 if [ "${1:-}" = "--health" ]; then
     test -r "${THREADS_FILE}"
     test "$(cat "${THREADS_FILE}")" -gt 0
+    pgrep -x rpc.mountd >/dev/null
     pgrep -x rpc.idmapd >/dev/null
     pgrep -x nfsdcld >/dev/null
     test -r "${STATE_DIR}/nfsdcld/main.sqlite"
+    no_mount_listener
     exportfs -s >/dev/null
     exit 0
 fi
 
+test -x /usr/sbin/rpc.mountd
 test -x /usr/sbin/rpc.nfsd
 test -x /usr/sbin/rpc.idmapd
 test -x /usr/sbin/nfsdcld
@@ -59,6 +77,11 @@ mountpoint -q "${STATE_DIR}/rpc_pipefs" || mount -t rpc_pipefs rpc_pipefs "${STA
 trap on_signal INT TERM
 trap stop_server 0
 
+rpc.mountd -F -N 2 -N 3 -u -s "${STATE_DIR}" &
+MOUNTD_PID=$!
+sleep 1
+kill -0 "${MOUNTD_PID}" >/dev/null 2>&1
+
 rpc.idmapd -S -f -p "${STATE_DIR}/rpc_pipefs" &
 IDMAPD_PID=$!
 sleep 1
@@ -76,10 +99,13 @@ exportfs -rav
 
 test -r "${THREADS_FILE}"
 test "$(cat "${THREADS_FILE}")" -gt 0
+no_mount_listener
 
 while :; do
     test "$(cat "${THREADS_FILE}")" -gt 0
+    kill -0 "${MOUNTD_PID}" >/dev/null 2>&1
     kill -0 "${IDMAPD_PID}" >/dev/null 2>&1
     kill -0 "${NFSDCLD_PID}" >/dev/null 2>&1
+    no_mount_listener
     sleep 10
 done

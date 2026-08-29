@@ -31,7 +31,11 @@ jobs:
           grep -Fq 'vers4.2 = yes' docker/nfs-kernel/nfs.conf
           grep -Fq 'tcp = yes' docker/nfs-kernel/nfs.conf
           grep -Fq 'udp = no' docker/nfs-kernel/nfs.conf
-          ! grep -Eq 'rpcbind|rpc\.mountd|rpc\.statd' docker/nfs-kernel/entrypoint.sh
+          grep -Fq 'rpc.mountd -F' docker/nfs-kernel/entrypoint.sh
+          grep -Fq -- '-N 2' docker/nfs-kernel/entrypoint.sh
+          grep -Fq -- '-N 3' docker/nfs-kernel/entrypoint.sh
+          grep -Fq -- '-u' docker/nfs-kernel/entrypoint.sh
+          ! grep -Eq 'rpcbind|rpc\.statd' docker/nfs-kernel/entrypoint.sh
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
